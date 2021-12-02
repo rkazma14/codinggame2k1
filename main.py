@@ -145,9 +145,8 @@ class Combo:
         self.score = 0
         for i in range(4):
             self.score += min(self.planet.tasks[i], self.station.tech[i])
-
-    def best_score(self, combo1):
-        return self.score >= combo1.score
+        self.score *= 16
+        self.score += self.planet.colonization_score
 
 game = Game()
 
