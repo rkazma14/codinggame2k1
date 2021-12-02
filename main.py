@@ -12,6 +12,20 @@ class Game:
         self.my_colonization_score = 0
         self.opp_colonization_score = 0
 
+    def get_first_active(self):
+        for station in self.my_stations:
+            if station.available:
+                return station
+
+    def get_first_non_colonized_planet(self):
+        self.planets[0]
+
+    def get_best_station(self):
+        return self.get_first_active()
+
+    def get_best_planet(self, station):
+        return self.get_first_non_colonized_planet()
+
     def get_action(self):
         # main actions: COLONIZE | RESUPPLY
         # bonus actions: ENERGY_CORE | ALIEN_ARTIFACT | TECH_RESEARCH | NEW_TECH
