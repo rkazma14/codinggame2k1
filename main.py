@@ -17,7 +17,6 @@ class Game:
     def reset(self):
         self.current_station_index = -1
 
-
     def get_next_active(self):
         if (self.current_station_index+1 < len(self.my_stations)):
             for i in range(self.current_station_index+1, len(self.my_stations)):
