@@ -25,22 +25,33 @@ class Game:
                     return self.my_stations[i]
         return None
 
-    def get_first_non_colonized_planet(self, station):
-        for planet in self.planets:
-            fine = False
-            for i in range(len(planet.tasks)):
-                if planet.tasks[i] > 0 and station.tech[i] > 0:
-                    fine = True
-            if fine:
-                return planet
-        return None
-
     def get_next_station(self):
         return self.get_next_active()
 
+    def get_first_valid_planet(self, station):
+        for planet in self.planets:
+            if self.should_colonize_planet(planet, station):
+                return planet
+        return None
+
+    def is_planet_not_already_lost(planet):
+        total_tasks = planet.myContribution + planet.oppContribution + planet.tasks0 + planet.tasks1 + planet.tasks2 + planet.tasks3
+        if total_tasks // 2 > planet.opp_contributions:
+            return True
+        else:
+            return False
+
+    def can_use_station_techs_on_planet(planet, station):
+        for i in range(len(planet.tasks)):
+                if planet.tasks[i] > 0 and station.tech[i] > 0:
+                    return True
+        return False
+
+    def should_colonize_planet(self, planet, station):
+        return self.is_planet_not_already_lost(planet) and self.can_use_station_techs_on_planet(planet, station)
+
     def get_best_planet(self, station):
-        
-        return self.get_first_non_colonized_planet(station)
+        return self.get_first_valid_planet(station)
 
     def get_energy_core_command_line(self):
         return 'ENERGY_CORE'
@@ -49,7 +60,7 @@ class Game:
         station_id = random.randint(0,3)
         tech_id = random.randint(0,3)
         if (self.my_stations[station_id].tech[tech_id] > 0):
-            if (self.my_stations[station_id].tech[tech_id] + 1 == tech_level):
+            if (self.my_stations[station_id].tech[tech_id] < tech_level):
                 return "TECH_RESEARCH {0} {1}".format(self.my_stations[station_id].id, tech_id)
         else:
             return "NEW_TECH {0} {1} {2}{3}".format(self.my_stations[station_id].id, tech_id, 'TECH_RESEARCH_', tech_level)
