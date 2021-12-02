@@ -103,10 +103,6 @@ class Game:
 
     def get_energy_core_command_line(self):
         if ("ENERGY_CORE" in self.my_bonuses):
-            # if all stations disabled
-            for station in self.my_stations:
-                if station.available:
-                    return None
             return 'ENERGY_CORE'
         return None
 
@@ -150,7 +146,7 @@ class Game:
         return None
 
     def get_best_preferred_bonus(self, planet, objectives_reached):
-        if (objectives_reached > number_of_objectives_reached_before_we_target_point):
+        if (objectives_reached >= number_of_objectives_reached_before_we_target_point):
             if bonus_ranking_by_points[planet.bonuses[0]] > bonus_ranking_by_points[planet.bonuses[1]]:
                 return 0
             else:
@@ -166,13 +162,9 @@ class Game:
         # main actions: COLONIZE | RESUPPLY
         # bonus actions: ENERGY_CORE | ALIEN_ARTIFACT | TECH_RESEARCH | NEW_TECH
 
-        energy_core_command_line = self.get_energy_core_command_line()
-        if energy_core_command_line is not None:
-            return energy_core_command_line
-
-        alien_artifact_command_line = self.get_alien_artifact_command_line()
-        if alien_artifact_command_line is not None:
-            return alien_artifact_command_line
+        # alien_artifact_command_line = self.get_alien_artifact_command_line()
+        # if alien_artifact_command_line is not None:
+        #     return alien_artifact_command_line
 
         bonus_command_line = self.get_bonus_command_line()
         if bonus_command_line is not None:
@@ -183,12 +175,16 @@ class Game:
                 if station.available:
                     for planet in self.planets:
                         combos.append(Combo(station, planet, self.get_objectives_reached()))
-            combos.sort(key=attrgetter('planet_bonus_score', 'score', 'planet.colonization_score', 'planet_tasks_sum'), reverse=True)
+            combos.sort(key=attrgetter('finish_it', 'planet_bonus_score', 'score', 'planet.colonization_score', 'planet_tasks_sum'), reverse=True)
 
             for combo in combos:
                 if self.should_colonize_planet(combo.planet, combo.station):
                     bonus = self.get_best_preferred_bonus(combo.planet, self.get_objectives_reached())
                     return "COLONIZE {0} {1} {2}".format(combo.station.id, combo.planet.id, bonus)
+
+            energy_core_command_line = self.get_energy_core_command_line()
+            if energy_core_command_line is not None:
+                return energy_core_command_line
             return 'RESUPPLY'
 
 class StationObjective:
@@ -219,7 +215,7 @@ class Planet:
         return self.tasks[0] + self.tasks[1] + self.tasks[2] + self.tasks[3]
 
     def bonus_score(self, objectives_reached):
-        if (objectives_reached > number_of_objectives_reached_before_we_target_point):
+        if (objectives_reached >= number_of_objectives_reached_before_we_target_point):
             if bonus_ranking_by_points[self.bonuses[0]] > bonus_ranking_by_points[self.bonuses[1]]:
                 return bonus_ranking_by_points[self.bonuses[0]]
             else:
@@ -239,11 +235,23 @@ class Combo:
         self.set_score()
         self.planet_tasks_sum = 16 - self.planet.tasks_remaining()
         self.planet_bonus_score = self.planet.bonus_score(objectives_reached)
+        self.finish_it = 0
+        self.set_finish_it()
 
     def set_score(self):
         self.score = 0
         for i in range(4):
             self.score += min(self.planet.tasks[i], self.station.tech[i])
+    
+    def set_finish_it(self):
+        self.finish_it = 0
+        can_finish = True
+        for i in range(4):
+            if (self.planet.tasks[i] > self.station.tech[i]):
+                can_finish = False
+        if can_finish and self.planet.opp_contribution == 0:
+            self.finish_it = 1
+
 
 game = Game()
 
