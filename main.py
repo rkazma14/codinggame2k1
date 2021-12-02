@@ -12,11 +12,14 @@ class Game:
         self.opp_bonuses = []
         self.my_colonization_score = 0
         self.opp_colonization_score = 0
+        self.current_station_index = -1
 
-    def get_first_active(self):
-        for station in self.my_stations:
-            if station.available:
-                return station
+    def get_next_active(self):
+        if (self.current_station_index+1 < len(self.my_stations)):
+            for i in range(self.current_station_index+1, len(self.my_stations)):
+                if self.my_stations[i].available:
+                    self.current_station_index = i
+                    return self.my_stations[i]
         return None
 
     def get_first_non_colonized_planet(self, station):
@@ -27,10 +30,10 @@ class Game:
                     fine = True
             if fine:
                 return planet
-        return self.planets[0]
+        return None
 
-    def get_best_station(self):
-        return self.get_first_active()
+    def get_next_station(self):
+        return self.get_next_active()
 
     def get_best_planet(self, station):
         return self.get_first_non_colonized_planet(station)
@@ -79,12 +82,14 @@ class Game:
         if bonus_command_line is not None:
             return bonus_command_line
         else:
-            station = self.get_best_station()
-            if station is not None:
+            station = self.get_next_station()
+            while station is not None:
                 planet = self.get_best_planet(station)
-                return "COLONIZE {0} {1} {2}".format(station.id, planet.id, 0)
-            else:
-                return 'RESUPPLY'
+                if planet is not None:
+                    return "COLONIZE {0} {1} {2}".format(station.id, planet.id, 0)
+                else:
+                    station = self.get_next_station()
+            return 'RESUPPLY'
 
 class StationObjective:
     def __init__(self, id, mine, objective_score, tech_objectives):
