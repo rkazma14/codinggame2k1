@@ -76,11 +76,13 @@ class Game:
         return None, None
 
     def get_energy_core_command_line(self):
-        # if all stations disabled
-        for station in self.my_stations:
-            if station.available:
-                return None
-        return 'ENERGY_CORE'
+        if ("ENERGY_CORE" in self.my_bonuses):
+            # if all stations disabled
+            for station in self.my_stations:
+                if station.available:
+                    return None
+            return 'ENERGY_CORE'
+        return None
 
     def get_tech_research_command_line(self, tech_level):
         station_id = None
@@ -97,11 +99,13 @@ class Game:
         return None
 
     def get_alien_artifact_command_line(self):
-        tech_id_1 = random.randint(0,3)
-        tech_id_2 = random.randint(0,3)
-        while (tech_id_2 == tech_id_1):
+        if ("ALIEN_ARTIFACT" in self.my_bonuses):
+            tech_id_1 = random.randint(0,3)
             tech_id_2 = random.randint(0,3)
-        return "ALIEN ARTIFACT {0} {1}".format(tech_id_1, tech_id_2)
+            while (tech_id_2 == tech_id_1):
+                tech_id_2 = random.randint(0,3)
+            return "ALIEN_ARTIFACT {0} {1}".format(tech_id_1, tech_id_2)
+        return None
 
     def get_best_bonus(self):
         for bonus in self.my_bonuses:
