@@ -2,6 +2,15 @@ import sys
 import random
 from operator import attrgetter
 
+bonus_ranking = {"POINTS_3": 7,\
+                "POINTS_2": 6, \
+                "ENERGY_CORE": 5,\
+                "POINTS_1": 4,\
+                "ALIEN_ARTIFACT": 3,\
+                "TECH_RESEARCH_2": 2,\
+                "TECH_RESEARCH_3": 1,\
+                "TECH_RESEARCH_4": 0}
+
 class Game:
     def __init__(self):
         self.sector_index = 0
@@ -107,20 +116,11 @@ class Game:
             return self.get_alien_artifact_command_line()
         return None
 
-    bonus_ranking = {"POINTS_3": 0,\
-                     "ENERGY_CORE": 1,\
-                     "POINTS_2": 2,
-                     "TECH_RESEARCH_2": 3,\
-                     "ALIEN_ARTIFACT": 4,\
-                     "POINTS_1": 5,\
-                     "TECH_RESEARCH_3": 6,\
-                     "TECH_RESEARCH_4": 7}
-
     def get_best_preferred_bonus(self, planet):
-        if self.bonus_ranking[planet.bonuses[0]] > self.bonus_ranking[planet.bonuses[1]]:
-            return 1
-        else:
+        if bonus_ranking[planet.bonuses[0]] > bonus_ranking[planet.bonuses[1]]:
             return 0
+        else:
+            return 1
 
 
     def get_action(self):
@@ -136,10 +136,9 @@ class Game:
                 if station.available:
                     for planet in self.planets:
                         combos.append(Combo(station, planet))
-            combos.sort(key=attrgetter('score', 'planet.colonization_score', 'planet_tasks_sum'), reverse=True)
+            combos.sort(key=attrgetter('planet_bonus_score', 'score', 'planet.colonization_score', 'planet_tasks_sum'), reverse=True)
 
             for combo in combos:
-                print(combo.score, file=sys.stderr, flush=True)
                 if self.should_colonize_planet(combo.planet, combo.station):
                     bonus = self.get_best_preferred_bonus(combo.planet)
                     return "COLONIZE {0} {1} {2}".format(combo.station.id, combo.planet.id, bonus)
@@ -172,6 +171,12 @@ class Planet:
     def tasks_remaining(self):
         return self.tasks[0] + self.tasks[1] + self.tasks[2] + self.tasks[3]
 
+    def bonus_score(self):
+        if bonus_ranking[self.bonuses[0]] > bonus_ranking[self.bonuses[1]]:
+            return bonus_ranking[self.bonuses[0]]
+        else:
+            return bonus_ranking[self.bonuses[1]]
+
 class Combo:
     def __init__(self, station, planet):
         self.id = id
@@ -180,6 +185,7 @@ class Combo:
         self.score = 0
         self.set_score()
         self.planet_tasks_sum = 16 - self.planet.tasks_remaining()
+        self.planet_bonus_score = self.planet.bonus_score()
 
     def set_score(self):
         self.score = 0
