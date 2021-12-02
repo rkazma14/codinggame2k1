@@ -89,6 +89,22 @@ class Game:
             return self.get_alien_artifact_command_line()
         return None
 
+    bonus_ranking = {"POINTS_3": 0,\
+                     "ENERGY_CORE": 1,\
+                     "POINTS_2": 2,
+                     "TECH_RESEARCH": 3,\
+                     "ALIEN_ARTIFACT": 4,\
+                     "POINTS_1": 5,\
+                     "TECH_RESEARCH_3": 6,\
+                     "TECH_RESEARCH_4": 7}
+
+    def get_best_preferred_bonus(self, planet):
+        if self.bonus_ranking[planet.bonuses[0]] < self.bonus_ranking[planet.bonuses[1]]:
+            return 1
+        else:
+            return 0
+
+
     def get_action(self):
         # main actions: COLONIZE | RESUPPLY
         # bonus actions: ENERGY_CORE | ALIEN_ARTIFACT | TECH_RESEARCH | NEW_TECH
@@ -107,7 +123,8 @@ class Game:
             for combo in combos:
                 print(combo.score, file=sys.stderr, flush=True)
                 if self.should_colonize_planet(combo.planet, combo.station):
-                    return "COLONIZE {0} {1} {2}".format(combo.station.id, combo.planet.id, 0)
+                    bonus = self.get_best_preferred_bonus(combo.planet)
+                    return "COLONIZE {0} {1} {2}".format(combo.station.id, combo.planet.id, bonus)
             return 'RESUPPLY'
 
 class StationObjective:
