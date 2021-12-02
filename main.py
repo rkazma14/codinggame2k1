@@ -36,7 +36,7 @@ class Game:
 
     def is_planet_not_already_lost(self, planet):
         total_tasks = planet.my_contribution + planet.opp_contribution + planet.tasks[0] + planet.tasks[1] + planet.tasks[2] + planet.tasks[3]
-        if total_tasks // 2 > planet.opp_contribution:
+        if total_tasks / 2 >= planet.opp_contribution:
             return True
         else:
             return False
@@ -99,14 +99,15 @@ class Game:
         else:
             combos = []
             for station in self.my_stations:
-                if self.my_stations[i].available:
+                if station.available:
                     for planet in self.planets:
                         combos.append(Combo(station, planet))
-            combos.sort(key=Combo.best_score)
+            combos.sort(key=lambda combo: combo.score, reverse=True)
 
             for combo in combos:
+                print(combo.score, file=sys.stderr, flush=True)
                 if self.should_colonize_planet(combo.planet, combo.station):
-                    return "COLONIZE {0} {1} {2}".format(station.id, planet.id, 0)
+                    return "COLONIZE {0} {1} {2}".format(combo.station.id, combo.planet.id, 0)
             return 'RESUPPLY'
 
 class StationObjective:
@@ -145,8 +146,8 @@ class Combo:
         for i in range(4):
             self.score += min(self.planet.tasks[i], self.station.tech[i])
 
-    def best_score(combo1, combo2):
-        return combo1.score >= combo2.score
+    def best_score(self, combo1):
+        return self.score >= combo1.score
 
 game = Game()
 
