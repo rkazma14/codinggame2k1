@@ -34,7 +34,7 @@ class Game:
                 return planet
         return None
 
-    def is_planet_not_already_lost(planet):
+    def is_planet_not_already_lost(self, planet):
         total_tasks = planet.myContribution + planet.oppContribution + planet.tasks0 + planet.tasks1 + planet.tasks2 + planet.tasks3
         if total_tasks // 2 > planet.opp_contributions:
             return True
@@ -89,6 +89,22 @@ class Game:
             return self.get_alien_artifact_command_line()
         return None
 
+    bonus_ranking = {"POINTS_3": 0,\
+                     "ENERGY_CORE": 1,\
+                     "POINTS_2": 2,
+                     "TECH_RESEARCH": 3,\
+                     "ALIEN_ARTIFACT": 4,\
+                     "POINTS_1": 5,\
+                     "TECH_RESEARCH_3": 6,\
+                     "TECH_RESEARCH_4": 7}
+
+    def get_best_preferred_bonus(self, planet):
+        if self.bonus_ranking[planet.bonuses[0]] < self.bonus_ranking[planet.bonuses[1]]:
+            return 1
+        else:
+            return 0
+
+
     def get_action(self):
         # main actions: COLONIZE | RESUPPLY
         # bonus actions: ENERGY_CORE | ALIEN_ARTIFACT | TECH_RESEARCH | NEW_TECH
@@ -100,8 +116,9 @@ class Game:
             station = self.get_next_station()
             while station is not None:
                 planet = self.get_best_planet(station)
+                bonus = self.get_best_preferred_bonus(planet)
                 if planet is not None:
-                    return "COLONIZE {0} {1} {2}".format(station.id, planet.id, 0)
+                    return "COLONIZE {0} {1} {2}".format(station.id, planet.id, bonus)
                 else:
                     station = self.get_next_station()
             return 'RESUPPLY'
