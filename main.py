@@ -76,6 +76,10 @@ class Game:
         return None, None
 
     def get_energy_core_command_line(self):
+        # if all stations disabled
+        for station in self.my_stations:
+            if station.available:
+                return None
         return 'ENERGY_CORE'
 
     def get_tech_research_command_line(self, tech_level):
@@ -93,26 +97,26 @@ class Game:
         return None
 
     def get_alien_artifact_command_line(self):
-        return None
+        tech_id_1 = random.randint(0,3)
+        tech_id_2 = random.randint(0,3)
+        while (tech_id_2 == tech_id_1):
+            tech_id_2 = random.randint(0,3)
+        return "ALIEN ARTIFACT {0} {1}".format(tech_id_1, tech_id_2)
 
     def get_best_bonus(self):
         for bonus in self.my_bonuses:
-            if bonus not in ["POINTS_1", "POINTS_2", "POINTS_3"]:
+            if bonus not in ["POINTS_1", "POINTS_2", "POINTS_3", "ALIEN_ARTIFACT", "ENERGY_CORE"]:
                 return bonus
         return None
 
     def get_bonus_command_line(self):
         bonus = self.get_best_bonus()
-        if bonus == "ENERGY_CORE":
-            return self.get_energy_core_command_line()
-        elif bonus == "TECH_RESEARCH_2":
+        if bonus == "TECH_RESEARCH_2":
             return self.get_tech_research_command_line(2)
         elif bonus == "TECH_RESEARCH_3":
             return self.get_tech_research_command_line(3)
         elif bonus == "TECH_RESEARCH_4":
             return self.get_tech_research_command_line(4)
-        elif bonus == "ALIEN_ARTIFACT":
-            return self.get_alien_artifact_command_line()
         return None
 
     def get_best_preferred_bonus(self, planet):
@@ -125,6 +129,14 @@ class Game:
     def get_action(self):
         # main actions: COLONIZE | RESUPPLY
         # bonus actions: ENERGY_CORE | ALIEN_ARTIFACT | TECH_RESEARCH | NEW_TECH
+
+        energy_core_command_line = self.get_energy_core_command_line()
+        if energy_core_command_line is not None:
+            return energy_core_command_line
+
+        alien_artifact_command_line = self.get_alien_artifact_command_line()
+        if alien_artifact_command_line is not None:
+            return alien_artifact_command_line
 
         bonus_command_line = self.get_bonus_command_line()
         if bonus_command_line is not None:
