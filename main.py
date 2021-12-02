@@ -34,14 +34,14 @@ class Game:
                 return planet
         return None
 
-    def is_planet_not_already_lost(planet):
-        total_tasks = planet.myContribution + planet.oppContribution + planet.tasks0 + planet.tasks1 + planet.tasks2 + planet.tasks3
-        if total_tasks // 2 > planet.opp_contributions:
+    def is_planet_not_already_lost(self, planet):
+        total_tasks = planet.my_contribution + planet.opp_contribution + planet.tasks[0] + planet.tasks[1] + planet.tasks[2] + planet.tasks[3]
+        if total_tasks // 2 > planet.opp_contribution:
             return True
         else:
             return False
 
-    def can_use_station_techs_on_planet(planet, station):
+    def can_use_station_techs_on_planet(self, planet, station):
         for i in range(len(planet.tasks)):
                 if planet.tasks[i] > 0 and station.tech[i] > 0:
                     return True
