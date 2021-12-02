@@ -39,6 +39,7 @@ class Game:
         return self.get_next_active()
 
     def get_best_planet(self, station):
+        
         return self.get_first_non_colonized_planet(station)
 
     def get_energy_core_command_line(self):
@@ -48,7 +49,7 @@ class Game:
         station_id = random.randint(0,3)
         tech_id = random.randint(0,3)
         if (self.my_stations[station_id].tech[tech_id] > 0):
-            if (self.my_stations[station_id].tech[tech_id] < tech_level):
+            if (self.my_stations[station_id].tech[tech_id] + 1 == tech_level):
                 return "TECH_RESEARCH {0} {1}".format(self.my_stations[station_id].id, tech_id)
         else:
             return "NEW_TECH {0} {1} {2}{3}".format(self.my_stations[station_id].id, tech_id, 'TECH_RESEARCH_', tech_level)
@@ -116,6 +117,19 @@ class Planet:
         self.opp_contribution = opp_contribution
         self.colonization_score = colonization_score
         self.bonuses = bonuses
+
+class Combo:
+    def __init__(self, station, planet):
+        self.id = id
+        self.station = station
+        self.planet = planet
+        self.score = 0
+        self.set_score()
+
+    def set_score(self):
+        self.score = 0
+        for i in range(4):
+            self.score += min(self.planet.tasks[i], self.station.tech[i])
 
 game = Game()
 
