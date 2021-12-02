@@ -83,14 +83,13 @@ class Game:
         station, tech_id = self.get_best_station_from_tech(tech_level)
         if station is None or tech_id is None:
             station_id = random.randint(0,3)
+            station = self.my_stations[station_id]
             tech_id = random.randint(0,3)
+        if (station.tech[tech_id] > 0):
+            if (station.tech[tech_id] + 1 == tech_level):
+                return "TECH_RESEARCH {0} {1}".format(station.id, tech_id)
         else:
-            station_id = station.id
-        if (self.my_stations[station_id].tech[tech_id] > 0):
-            if (self.my_stations[station_id].tech[tech_id] + 1 == tech_level):
-                return "TECH_RESEARCH {0} {1}".format(self.my_stations[station_id].id, tech_id)
-        else:
-            return "NEW_TECH {0} {1} {2}{3}".format(self.my_stations[station_id].id, tech_id, 'TECH_RESEARCH_', tech_level)
+            return "NEW_TECH {0} {1} {2}{3}".format(station.id, tech_id, 'TECH_RESEARCH_', tech_level)
         return None
 
     def get_alien_artifact_command_line(self):
