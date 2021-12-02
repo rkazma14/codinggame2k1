@@ -2,6 +2,15 @@ import sys
 import random
 from operator import attrgetter
 
+bonus_ranking = {"POINTS_3": 0,\
+                "POINTS_2": 1, \
+                "ENERGY_CORE": 2,\
+                "POINTS_1": 3,\
+                "ALIEN_ARTIFACT": 4,\
+                "TECH_RESEARCH_2": 5,\
+                "TECH_RESEARCH_3": 6,\
+                "TECH_RESEARCH_4": 7}
+
 class Game:
     def __init__(self):
         self.sector_index = 0
@@ -61,7 +70,7 @@ class Game:
         station_id = random.randint(0,3)
         tech_id = random.randint(0,3)
         if (self.my_stations[station_id].tech[tech_id] > 0):
-            if (self.my_stations[station_id].tech[tech_id] < tech_level):
+            if (self.my_stations[station_id].tech[tech_id] + 1 == tech_level):
                 return "TECH_RESEARCH {0} {1}".format(self.my_stations[station_id].id, tech_id)
         else:
             return "NEW_TECH {0} {1} {2}{3}".format(self.my_stations[station_id].id, tech_id, 'TECH_RESEARCH_', tech_level)
@@ -90,17 +99,8 @@ class Game:
             return self.get_alien_artifact_command_line()
         return None
 
-    bonus_ranking = {"POINTS_3": 0,\
-                     "ENERGY_CORE": 1,\
-                     "POINTS_2": 2,
-                     "TECH_RESEARCH_2": 3,\
-                     "ALIEN_ARTIFACT": 4,\
-                     "POINTS_1": 5,\
-                     "TECH_RESEARCH_3": 6,\
-                     "TECH_RESEARCH_4": 7}
-
     def get_best_preferred_bonus(self, planet):
-        if self.bonus_ranking[planet.bonuses[0]] > self.bonus_ranking[planet.bonuses[1]]:
+        if bonus_ranking[planet.bonuses[0]] > bonus_ranking[planet.bonuses[1]]:
             return 1
         else:
             return 0
@@ -119,10 +119,9 @@ class Game:
                 if station.available:
                     for planet in self.planets:
                         combos.append(Combo(station, planet))
-            combos.sort(key=attrgetter('score', 'planet.colonization_score', 'planet_tasks_sum'), reverse=True)
+            combos.sort(key=attrgetter('planet_bonus_score', 'score', 'planet.colonization_score', 'planet_tasks_sum'), reverse=True)
 
             for combo in combos:
-                print(combo.score, file=sys.stderr, flush=True)
                 if self.should_colonize_planet(combo.planet, combo.station):
                     bonus = self.get_best_preferred_bonus(combo.planet)
                     return "COLONIZE {0} {1} {2}".format(combo.station.id, combo.planet.id, bonus)
@@ -150,9 +149,13 @@ class Planet:
         self.opp_contribution = opp_contribution
         self.colonization_score = colonization_score
         self.bonuses = bonuses
+        self.bonus_score = 0
     
     def tasks_remaining(self):
         return self.tasks[0] + self.tasks[1] + self.tasks[2] + self.tasks[3]
+
+    def bonus_score(self):
+        return min(bonus_ranking[self.bonuses[0]], bonus_ranking[self.bonuses[1]])
 
 class Combo:
     def __init__(self, station, planet):
@@ -162,6 +165,7 @@ class Combo:
         self.score = 0
         self.set_score()
         self.planet_tasks_sum = 16 - self.planet.tasks_remaining()
+        self.planet_bonus_score = self.planet.bonus_score()
 
     def set_score(self):
         self.score = 0
