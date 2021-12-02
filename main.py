@@ -29,7 +29,7 @@ class Game:
         self.my_stations.sort(key=attrgetter('objective_score'), reverse=True)
 
     def get_station_objective_by_id(self, station_id):
-        return (station_objective for station_objective in self.station_objectives if station_objective.id == station_id)
+        return self.station_objectives[str(station_id)]
 
     def get_next_active(self):
         if (self.current_station_index+1 < len(self.my_stations)):
@@ -198,7 +198,7 @@ for i in range(8):
     # objective_score: receive these points if tech level objectives are met
     station_id, mine, objective_score, obj_0, obj_1, obj_2, obj_3 = [int(j) for j in input().split()]
     station_objective = StationObjective(station_id, mine, objective_score, [obj_0, obj_1, obj_2, obj_3])
-    game.station_objectives[id] = station_objective
+    game.station_objectives[str(station_id)] = station_objective
 
 # game loop
 while True:
