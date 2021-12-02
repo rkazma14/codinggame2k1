@@ -93,7 +93,7 @@ class Game:
     bonus_ranking = {"POINTS_3": 0,\
                      "ENERGY_CORE": 1,\
                      "POINTS_2": 2,
-                     "TECH_RESEARCH": 3,\
+                     "TECH_RESEARCH_2": 3,\
                      "ALIEN_ARTIFACT": 4,\
                      "POINTS_1": 5,\
                      "TECH_RESEARCH_3": 6,\
@@ -119,7 +119,7 @@ class Game:
                 if station.available:
                     for planet in self.planets:
                         combos.append(Combo(station, planet))
-            combos.sort(key=attrgetter('score', 'planet.colonization_score', 'planet_taks_sum'), reverse=True)
+            combos.sort(key=attrgetter('score', 'planet.colonization_score', 'planet_tasks_sum'), reverse=True)
 
             for combo in combos:
                 print(combo.score, file=sys.stderr, flush=True)
@@ -152,7 +152,7 @@ class Planet:
         self.bonuses = bonuses
     
     def tasks_remaining(self):
-        return self.planet.tasks[0] + self.planet.tasks[1] + self.planet.tasks[2] + self.planet.tasks[3]
+        return self.tasks[0] + self.tasks[1] + self.tasks[2] + self.tasks[3]
 
 class Combo:
     def __init__(self, station, planet):
@@ -161,7 +161,7 @@ class Combo:
         self.planet = planet
         self.score = 0
         self.set_score()
-        self.planet_taks_sum = self.planet.tasks_remaining()
+        self.planet_tasks_sum = self.planet.tasks_remaining()
 
     def set_score(self):
         self.score = 0
