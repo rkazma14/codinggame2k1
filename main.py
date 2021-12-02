@@ -86,13 +86,16 @@ class Game:
         if bonus_command_line is not None:
             return bonus_command_line
         else:
-            station = self.get_next_station()
-            while station is not None:
-                planet = self.get_best_planet(station)
-                if planet is not None:
+            combos = []
+            for station in self.my_stations:
+                if self.my_stations[i].available:
+                    for planet in self.planets:
+                        combos.append(Combo(station, planet))
+            combos.sort(key=Combo.best_score)
+
+            for combo in combos:
+                if self.should_colonize_planet(combo.planet, combo.station):
                     return "COLONIZE {0} {1} {2}".format(station.id, planet.id, 0)
-                else:
-                    station = self.get_next_station()
             return 'RESUPPLY'
 
 class StationObjective:
@@ -130,6 +133,9 @@ class Combo:
         self.score = 0
         for i in range(4):
             self.score += min(self.planet.tasks[i], self.station.tech[i])
+
+    def best_score(combo1, combo2):
+        return combo1.score >= combo2.score
 
 game = Game()
 
