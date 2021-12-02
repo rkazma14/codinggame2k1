@@ -161,7 +161,7 @@ class Combo:
         self.planet = planet
         self.score = 0
         self.set_score()
-        self.planet_tasks_sum = self.planet.tasks_remaining()
+        self.planet_tasks_sum = 16 - self.planet.tasks_remaining()
 
     def set_score(self):
         self.score = 0
