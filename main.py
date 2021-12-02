@@ -35,13 +35,13 @@ class Game:
         return None
 
     def is_planet_not_already_lost(self, planet):
-        total_tasks = planet.myContribution + planet.oppContribution + planet.tasks0 + planet.tasks1 + planet.tasks2 + planet.tasks3
-        if total_tasks // 2 > planet.opp_contributions:
+        total_tasks = planet.my_contribution + planet.opp_contribution + planet.tasks[0] + planet.tasks[1] + planet.tasks[2] + planet.tasks[3]
+        if total_tasks / 2 >= planet.opp_contribution:
             return True
         else:
             return False
 
-    def can_use_station_techs_on_planet(planet, station):
+    def can_use_station_techs_on_planet(self, planet, station):
         for i in range(len(planet.tasks)):
                 if planet.tasks[i] > 0 and station.tech[i] > 0:
                     return True
@@ -113,14 +113,18 @@ class Game:
         if bonus_command_line is not None:
             return bonus_command_line
         else:
-            station = self.get_next_station()
-            while station is not None:
-                planet = self.get_best_planet(station)
-                bonus = self.get_best_preferred_bonus(planet)
-                if planet is not None:
-                    return "COLONIZE {0} {1} {2}".format(station.id, planet.id, bonus)
-                else:
-                    station = self.get_next_station()
+            combos = []
+            for station in self.my_stations:
+                if station.available:
+                    for planet in self.planets:
+                        combos.append(Combo(station, planet))
+            combos.sort(key=lambda combo: combo.score, reverse=True)
+
+            for combo in combos:
+                print(combo.score, file=sys.stderr, flush=True)
+                if self.should_colonize_planet(combo.planet, combo.station):
+                    bonus = self.get_best_preferred_bonus(combo.planet)
+                    return "COLONIZE {0} {1} {2}".format(combo.station.id, combo.planet.id, bonus)
             return 'RESUPPLY'
 
 class StationObjective:
@@ -158,6 +162,9 @@ class Combo:
         self.score = 0
         for i in range(4):
             self.score += min(self.planet.tasks[i], self.station.tech[i])
+
+    def best_score(self, combo1):
+        return self.score >= combo1.score
 
 game = Game()
 
