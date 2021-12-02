@@ -17,6 +17,10 @@ class Game:
 
     def reset(self):
         self.current_station_index = -1
+        self.my_stations.sort(key=attrgetter('objective_score'), reverse=True)
+
+    def get_station_objective_by_id(self, station_id):
+        return (station_objective for station_objective in self.station_objectives if station_objective.id == station_id)
 
     def get_next_active(self):
         if (self.current_station_index+1 < len(self.my_stations)):
@@ -54,14 +58,27 @@ class Game:
     def get_best_planet(self, station):
         return self.get_first_valid_planet(station)
 
+    def get_best_station_from_tech(self, tech_level):
+        for station in self.my_stations:
+            station_objective = self.get_station_objective_by_id(station.id)
+            for i in range(len(station.tech)):
+                if (station.tech[i] + 1 == tech_level) and (station.tech[i] < station_objective.tech_objectives[i]):
+                    return station, i
+        return None, None
+
     def get_energy_core_command_line(self):
         return 'ENERGY_CORE'
 
     def get_tech_research_command_line(self, tech_level):
-        station_id = random.randint(0,3)
-        tech_id = random.randint(0,3)
+        station_id = None
+        station, tech_id = self.get_best_station_from_tech(tech_level)
+        if station is None or tech_id is None:
+            station_id = random.randint(0,3)
+            tech_id = random.randint(0,3)
+        else:
+            station_id = station.id
         if (self.my_stations[station_id].tech[tech_id] > 0):
-            if (self.my_stations[station_id].tech[tech_id] < tech_level):
+            if (self.my_stations[station_id].tech[tech_id] + 1 == tech_level):
                 return "TECH_RESEARCH {0} {1}".format(self.my_stations[station_id].id, tech_id)
         else:
             return "NEW_TECH {0} {1} {2}{3}".format(self.my_stations[station_id].id, tech_id, 'TECH_RESEARCH_', tech_level)
@@ -136,11 +153,12 @@ class StationObjective:
         self.tech_objectives = tech_objectives
 
 class Station:
-    def __init__(self, id, mine, available, tech):
+    def __init__(self, id, mine, available, tech, objective_score):
         self.id = id
         self.mine = mine
         self.available = available
         self.tech = tech
+        self.objective_score = objective_score
 
 class Planet:
     def __init__(self, planet_id, tasks, my_contribution, opp_contribution, colonization_score, bonuses):
@@ -178,7 +196,6 @@ for i in range(8):
 
 # game loop
 while True:
-    game.reset()
     sector_index = int(input())
     game.sector_index = sector_index
 
@@ -186,7 +203,7 @@ while True:
     game.opp_stations = []
     for i in range(8):
         station_id, mine, available, tech_0, tech_1, tech_2, tech_3 = [int(j) for j in input().split()]
-        station = Station(station_id, mine, available, [tech_0, tech_1, tech_2, tech_3])
+        station = Station(station_id, mine, available, [tech_0, tech_1, tech_2, tech_3], game.get_station_objective_by_id(station_id).objective_score)
         if mine:
             game.my_stations.append(station)
         else:
@@ -222,6 +239,8 @@ while True:
             game.opp_bonuses.append(bonus)
     game.my_colonization_score = int(input())  # points from planet colonization, does not include bonus points
     game.opp_colonization_score = int(input())
+
+    game.reset()
 
     action = game.get_action()
     # Write an action using print
