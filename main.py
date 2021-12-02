@@ -12,7 +12,11 @@ class Game:
         self.opp_bonuses = []
         self.my_colonization_score = 0
         self.opp_colonization_score = 0
+        self.reset()
+
+    def reset(self):
         self.current_station_index = -1
+
 
     def get_next_active(self):
         if (self.current_station_index+1 < len(self.my_stations)):
@@ -124,6 +128,7 @@ for i in range(8):
 
 # game loop
 while True:
+    game.reset()
     sector_index = int(input())
     game.sector_index = sector_index
 
