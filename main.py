@@ -2,14 +2,14 @@ import sys
 import random
 from operator import attrgetter
 
-bonus_ranking = {"POINTS_3": 0,\
-                "POINTS_2": 1, \
-                "ENERGY_CORE": 2,\
-                "POINTS_1": 3,\
-                "ALIEN_ARTIFACT": 4,\
-                "TECH_RESEARCH_2": 5,\
-                "TECH_RESEARCH_3": 6,\
-                "TECH_RESEARCH_4": 7}
+bonus_ranking = {"POINTS_3": 7,\
+                "POINTS_2": 6, \
+                "ENERGY_CORE": 5,\
+                "POINTS_1": 4,\
+                "ALIEN_ARTIFACT": 3,\
+                "TECH_RESEARCH_2": 2,\
+                "TECH_RESEARCH_3": 1,\
+                "TECH_RESEARCH_4": 0}
 
 class Game:
     def __init__(self):
@@ -101,9 +101,9 @@ class Game:
 
     def get_best_preferred_bonus(self, planet):
         if bonus_ranking[planet.bonuses[0]] > bonus_ranking[planet.bonuses[1]]:
-            return 1
-        else:
             return 0
+        else:
+            return 1
 
 
     def get_action(self):
@@ -149,13 +149,15 @@ class Planet:
         self.opp_contribution = opp_contribution
         self.colonization_score = colonization_score
         self.bonuses = bonuses
-        self.bonus_score = 0
     
     def tasks_remaining(self):
         return self.tasks[0] + self.tasks[1] + self.tasks[2] + self.tasks[3]
 
     def bonus_score(self):
-        return min(bonus_ranking[self.bonuses[0]], bonus_ranking[self.bonuses[1]])
+        if bonus_ranking[self.bonuses[0]] > bonus_ranking[self.bonuses[1]]:
+            return bonus_ranking[self.bonuses[0]]
+        else:
+            return bonus_ranking[self.bonuses[1]]
 
 class Combo:
     def __init__(self, station, planet):
