@@ -16,9 +16,10 @@ class Game:
         for station in self.my_stations:
             if station.available:
                 return station
+        return None
 
     def get_first_non_colonized_planet(self):
-        self.planets[0]
+        return self.planets[0]
 
     def get_best_station(self):
         return self.get_first_active()
@@ -29,7 +30,12 @@ class Game:
     def get_action(self):
         # main actions: COLONIZE | RESUPPLY
         # bonus actions: ENERGY_CORE | ALIEN_ARTIFACT | TECH_RESEARCH | NEW_TECH
-        return 'RESUPPLY'
+        station = self.get_best_station()
+        planet = self.get_best_planet(station)
+        if station is not None:
+            return "COLONIZE {0} {1} {2}".format(station.id, planet.id, 0)
+        else:
+            return 'RESUPPLY'
 
 class StationObjective:
     def __init__(self, id, mine, objective_score, tech_objectives):
