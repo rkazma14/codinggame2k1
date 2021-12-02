@@ -43,9 +43,9 @@ class Game:
         tech_id = random.randint(0,3)
         if (self.my_stations[station_id].tech[tech_id] > 0):
             if (self.my_stations[station_id].tech[tech_id] < tech_level):
-                return "TECH_RESEARCH {0} {1}".format(self.my_stations[station_id]["id"], tech_id)
+                return "TECH_RESEARCH {0} {1}".format(self.my_stations[station_id].id, tech_id)
         else:
-            return "NEW_TECH {0} {1} {2}{3}".format(self.my_stations[station_id]["id"], tech_id, 'TECH_RESEARCH_', tech_level)
+            return "NEW_TECH {0} {1} {2}{3}".format(self.my_stations[station_id].id, tech_id, 'TECH_RESEARCH_', tech_level)
         return None
 
     def get_alien_artifact_command_line(self):
