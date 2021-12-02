@@ -80,8 +80,8 @@ class Game:
             return bonus_command_line
         else:
             station = self.get_best_station()
-            planet = self.get_best_planet(station)
             if station is not None:
+                planet = self.get_best_planet(station)
                 return "COLONIZE {0} {1} {2}".format(station.id, planet.id, 0)
             else:
                 return 'RESUPPLY'
