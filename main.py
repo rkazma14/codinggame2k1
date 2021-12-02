@@ -1,4 +1,5 @@
 import sys
+import random
 
 class Game:
     def __init__(self):
@@ -18,24 +19,72 @@ class Game:
                 return station
         return None
 
-    def get_first_non_colonized_planet(self):
+    def get_first_non_colonized_planet(self, station):
+        for planet in self.planets:
+            fine = False
+            for i in range(len(planet.tasks)):
+                if planet.tasks[i] > 0 and station.tech[i] > 0:
+                    fine = True
+            if fine:
+                return planet
         return self.planets[0]
 
     def get_best_station(self):
         return self.get_first_active()
 
     def get_best_planet(self, station):
-        return self.get_first_non_colonized_planet()
+        return self.get_first_non_colonized_planet(station)
+
+    def get_energy_core_command_line(self):
+        return 'ENERGY_CORE'
+
+    def get_tech_research_command_line(self, tech_level):
+        station_id = random.randint(0,3)
+        tech_id = random.randint(0,3)
+        if (self.my_stations[station_id].tech[tech_id] > 0):
+            if (self.my_stations[station_id].tech[tech_id] < tech_level):
+                return "TECH_RESEARCH {0} {1}".format(station_id, tech_id)
+        else:
+            return "NEW_TECH {0} {1} {2}{3}".format(station_id, tech_id, 'TECH_RESEARCH_', tech_level)
+        return None
+
+    def get_alien_artifact_command_line(self):
+        return None
+
+    def get_best_bonus(self):
+        for bonus in self.my_bonuses:
+            if bonus not in ["POINTS_1", "POINTS_2", "POINTS_3"]:
+                return bonus
+        return None
+
+    def get_bonus_command_line(self):
+        bonus = self.get_best_bonus()
+        if bonus == "ENERGY_CORE":
+            return self.get_energy_core_command_line()
+        elif bonus == "TECH_RESEARCH_2":
+            return self.get_tech_research_command_line(2)
+        elif bonus == "TECH_RESEARCH_3":
+            return self.get_tech_research_command_line(3)
+        elif bonus == "TECH_RESEARCH_4":
+            return self.get_tech_research_command_line(4)
+        elif bonus == "ALIEN_ARTIFACT":
+            return self.get_alien_artifact_command_line()
+        return None
 
     def get_action(self):
         # main actions: COLONIZE | RESUPPLY
         # bonus actions: ENERGY_CORE | ALIEN_ARTIFACT | TECH_RESEARCH | NEW_TECH
-        station = self.get_best_station()
-        planet = self.get_best_planet(station)
-        if station is not None:
-            return "COLONIZE {0} {1} {2}".format(station.id, planet.id, 0)
+
+        bonus_command_line = self.get_bonus_command_line()
+        if bonus_command_line is not None:
+            return bonus_command_line
         else:
-            return 'RESUPPLY'
+            station = self.get_best_station()
+            planet = self.get_best_planet(station)
+            if station is not None:
+                return "COLONIZE {0} {1} {2}".format(station.id, planet.id, 0)
+            else:
+                return 'RESUPPLY'
 
 class StationObjective:
     def __init__(self, id, mine, objective_score, tech_objectives):
