@@ -1,5 +1,6 @@
 import sys
 import random
+from operator import attrgetter
 
 class Game:
     def __init__(self):
@@ -35,7 +36,7 @@ class Game:
         return None
 
     def is_planet_not_already_lost(self, planet):
-        total_tasks = planet.my_contribution + planet.opp_contribution + planet.tasks[0] + planet.tasks[1] + planet.tasks[2] + planet.tasks[3]
+        total_tasks = planet.my_contribution + planet.opp_contribution + planet.tasks_remaining()
         if total_tasks / 2 >= planet.opp_contribution:
             return True
         else:
@@ -99,7 +100,7 @@ class Game:
                      "TECH_RESEARCH_4": 7}
 
     def get_best_preferred_bonus(self, planet):
-        if self.bonus_ranking[planet.bonuses[0]] < self.bonus_ranking[planet.bonuses[1]]:
+        if self.bonus_ranking[planet.bonuses[0]] > self.bonus_ranking[planet.bonuses[1]]:
             return 1
         else:
             return 0
@@ -118,7 +119,7 @@ class Game:
                 if station.available:
                     for planet in self.planets:
                         combos.append(Combo(station, planet))
-            combos.sort(key=lambda combo: combo.score, reverse=True)
+            combos.sort(key=attrgetter('score', 'planet.colonization_score', 'planet_taks_sum'), reverse=True)
 
             for combo in combos:
                 print(combo.score, file=sys.stderr, flush=True)
@@ -149,6 +150,9 @@ class Planet:
         self.opp_contribution = opp_contribution
         self.colonization_score = colonization_score
         self.bonuses = bonuses
+    
+    def tasks_remaining(self):
+        return self.planet.tasks[0] + self.planet.tasks[1] + self.planet.tasks[2] + self.planet.tasks[3]
 
 class Combo:
     def __init__(self, station, planet):
@@ -157,13 +161,12 @@ class Combo:
         self.planet = planet
         self.score = 0
         self.set_score()
+        self.planet_taks_sum = self.planet.tasks_remaining()
 
     def set_score(self):
         self.score = 0
         for i in range(4):
             self.score += min(self.planet.tasks[i], self.station.tech[i])
-        self.score *= 16
-        self.score += self.planet.colonization_score
 
 game = Game()
 
