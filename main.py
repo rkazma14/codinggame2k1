@@ -2,9 +2,10 @@ import sys
 import random
 from operator import attrgetter
 
-feature_only_2_remaining = True
+feature_only_2_remaining = False
 
-weights = [('finish_it', 16), ('planet_bonus_score', 8) , ('score', 4), ('planet.colonization_score', 2) , ('planet_tasks_sum', 1)]
+#weights = [('finish_it', 16), ('planet_bonus_score', 8) , ('score', 4), ('planet.colonization_score', 2) , ('planet_tasks_sum', 1)]
+weights = [('finish_it', 16), ('planet_bonus_score', 8) , ('score', 4), ('planet_tasks_sum', 1)]
 
 bonus_ranking_by_points = {
     "POINTS_3": 16,
@@ -45,9 +46,9 @@ class Game:
 
     def reset(self):
         self.current_station_index = -1
-        self.my_stations.sort(key=attrgetter('objective_score'), reverse=True)
+        self.my_stations.sort(key=attrgetter('remaining_upgrades'))
 
-    def tech_first(self, objectives_reached):
+    def tech_first(objectives_reached):
         return (objectives_reached < number_of_objectives_reached_before_we_target_point)
 
     def get_objectives_reached(self):
@@ -94,22 +95,41 @@ class Game:
                     return True
         return False
 
-    def should_colonize_planet(self, planet, station):
+    def should_colonize_planet(self, planet, station, go_for_it):
         colonize = self.is_planet_not_already_lost(planet) and self.can_use_station_techs_on_planet(planet, station)
         if colonize and feature_only_2_remaining:
-            if len(self.planets == 2) and (planet.my_contribution + planet.opp_contribution) == 0:
+            if len(self.planets) == 2 and (planet.my_contribution + planet.opp_contribution) == 0:
                 colonize = False
+        if not colonize and go_for_it:
+            if planet.my_contribution == 0:
+                colonize = True
         return colonize
 
     def get_best_planet(self, station):
         return self.get_first_valid_planet(station)
 
+    def get_best_tech_from_station(self, tech_level, station):
+        print("Station:", station, file=sys.stderr, flush=True)
+        station_objective = self.get_station_objective_by_id(station.id)
+        for i in range(len(station.tech)):
+            print("i:", i, "tech_level:", tech_level, "current_tech_level:", station.tech[i], "station_tech_objective:", station_objective.tech_objectives[i], file=sys.stderr, flush=True)
+            target_level = station.tech[i] + 1
+            print("bool1:", (target_level == tech_level), "bool2:", (station.tech[i] < station_objective.tech_objectives[i]), file=sys.stderr, flush=True)
+            if (target_level == tech_level) and (station.tech[i] < station_objective.tech_objectives[i]):
+                print("made it", file=sys.stderr, flush=True)
+                return station, i
+        return None, None
+
     def get_best_station_from_tech(self, tech_level):
-        for station in self.my_stations:
-            station_objective = self.get_station_objective_by_id(station.id)
-            for i in range(len(station.tech)):
-                if (station.tech[i] + 1 == tech_level) and (station.tech[i] < station_objective.tech_objectives[i]):
-                    return station, i
+        #if Game.tech_first(self.get_objectives_reached()):
+        if False:
+            station = self.my_stations[0]
+            return self.get_best_tech_from_station(tech_level, station)
+        else:
+            for station in self.my_stations:
+                best_station, i = self.get_best_tech_from_station(tech_level, station)
+                if best_station is not None:
+                    return best_station, i
         return None, None
 
     def get_energy_core_command_line(self):
@@ -123,11 +143,11 @@ class Game:
         if station is None or tech_id is None:
             tech_level = 1
             station, tech_id = self.get_best_station_from_tech(tech_level)
-        if (station.tech[tech_id] > 0):
-            if (station.tech[tech_id] + 1 == tech_level):
+        if station is not None:
+            if (station.tech[tech_id] > 0):
                 return "TECH_RESEARCH {0} {1}".format(station.id, tech_id)
-        else:
-            return "NEW_TECH {0} {1} {2}".format(station.id, tech_id, bonus)
+            else:
+                return "NEW_TECH {0} {1} {2}".format(station.id, tech_id, bonus)
         return None
 
     def get_alien_artifact_command_line(self):
@@ -146,14 +166,17 @@ class Game:
         return None
 
     def get_bonus_command_line(self, objectives_reached):
-        if (self.tech_first(objectives_reached) and len(self.my_bonuses) > 0):
+        print("get_bonus_command_line, obj:", objectives_reached, "len bonuses:", len(self.my_bonuses), file=sys.stderr, flush=True)
+        if (Game.tech_first(objectives_reached) and len(self.my_bonuses) > 0):
             # If TECH bonus: apply based on objective to TECH_RESEARCH
             # If not TECH bonus: apply based on objective to NEW_TECH
-            bonus = self.my_bonuses[0]
-            if "TECH_RESEARCH" in bonus:
-                self.get_tech_research_command_line(bonus, bonus[-1])
-            else:
-                self.get_tech_research_command_line(bonus, 1)
+            for bonus in self.my_bonuses:
+                if "TECH_RESEARCH" in bonus:
+                    command = self.get_tech_research_command_line(bonus, int(bonus[-1]))
+                else:
+                    command = self.get_tech_research_command_line(bonus, 1)
+                if command is not None:
+                    return command
         else:
             bonus = self.get_best_bonus()
             if bonus == "TECH_RESEARCH_2":
@@ -167,7 +190,7 @@ class Game:
         return None
 
     def get_best_preferred_bonus(self, planet, objectives_reached):
-        if (not self.tech_first(objectives_reached)):
+        if (not Game.tech_first(objectives_reached)):
             if bonus_ranking_by_points[planet.bonuses[0]] > bonus_ranking_by_points[planet.bonuses[1]]:
                 return 0
             else:
@@ -195,9 +218,14 @@ class Game:
             combos.sort(key=attrgetter('finish_it', 'planet_bonus_score', 'score', 'planet.colonization_score', 'planet_tasks_sum'), reverse=True)
 
             for combo in combos:
-                if self.should_colonize_planet(combo.planet, combo.station):
+                if self.should_colonize_planet(combo.planet, combo.station, go_for_it=False):
                     bonus = self.get_best_preferred_bonus(combo.planet, self.get_objectives_reached())
                     return "COLONIZE {0} {1} {2}".format(combo.station.id, combo.planet.id, bonus)
+
+            #for combo in combos:
+            #    if self.should_colonize_planet(combo.planet, combo.station, go_for_it=True):
+            #        bonus = self.get_best_preferred_bonus(combo.planet, self.get_objectives_reached())
+            #        return "COLONIZE {0} {1} {2}".format(combo.station.id, combo.planet.id, bonus)
 
             energy_core_command_line = self.get_energy_core_command_line()
             if energy_core_command_line is not None:
@@ -212,12 +240,19 @@ class StationObjective:
         self.tech_objectives = tech_objectives
 
 class Station:
-    def __init__(self, id, mine, available, tech, objective_score):
+    def __init__(self, id, mine, available, tech, objective_score, tech_objectives):
         self.id = id
         self.mine = mine
         self.available = available
         self.tech = tech
+        self.tech_objectives = tech_objectives
         self.objective_score = objective_score
+        self.remaining_upgrades = 0
+        self.set_remaining_upgrades()
+
+    def set_remaining_upgrades(self):
+        for i in range(len(self.tech)):
+            self.remaining_upgrades += (self.tech_objectives[i] - self.tech[i])
 
 class Planet:
     def __init__(self, planet_id, tasks, my_contribution, opp_contribution, colonization_score, bonuses):
@@ -232,7 +267,7 @@ class Planet:
         return self.tasks[0] + self.tasks[1] + self.tasks[2] + self.tasks[3]
 
     def bonus_score(self, objectives_reached):
-        if (not self.tech_first(objectives_reached)):
+        if (not Game.tech_first(objectives_reached)):
             if bonus_ranking_by_points[self.bonuses[0]] > bonus_ranking_by_points[self.bonuses[1]]:
                 return bonus_ranking_by_points[self.bonuses[0]]
             else:
@@ -295,7 +330,9 @@ while True:
     game.opp_stations = []
     for i in range(8):
         station_id, mine, available, tech_0, tech_1, tech_2, tech_3 = [int(j) for j in input().split()]
-        station = Station(station_id, mine, available, [tech_0, tech_1, tech_2, tech_3], game.get_station_objective_by_id(station_id).objective_score)
+        station_objective = game.get_station_objective_by_id(station_id)
+        station = Station(station_id, mine, available, [tech_0, tech_1, tech_2, tech_3],
+            station_objective.objective_score, station_objective.tech_objectives)
         if mine:
             game.my_stations.append(station)
         else:
