@@ -2,26 +2,30 @@ import sys
 import random
 from operator import attrgetter
 
+feature_only_2_remaining = True
+
+weights = [('finish_it', 16), ('planet_bonus_score', 8) , ('score', 4), ('planet.colonization_score', 2) , ('planet_tasks_sum', 1)]
+
 bonus_ranking_by_points = {
-    "POINTS_3": 7,
-    "POINTS_2": 6, 
-    "ENERGY_CORE": 1,
-    "POINTS_1": 5,
-    "ALIEN_ARTIFACT": 0,
-    "TECH_RESEARCH_2": 4,
-    "TECH_RESEARCH_3": 3,
-    "TECH_RESEARCH_4": 2
+    "POINTS_3": 16,
+    "POINTS_2": 15, 
+    "POINTS_1": 14,
+    "TECH_RESEARCH_2": 9,
+    "TECH_RESEARCH_3": 8,
+    "TECH_RESEARCH_4": 7,
+    "ENERGY_CORE": 4,
+    "ALIEN_ARTIFACT": 0
 }
 
 bonus_ranking_by_tech = {
-    "POINTS_3": 7,
-    "POINTS_2": 6, 
+    "TECH_RESEARCH_2": 16,
+    "TECH_RESEARCH_3": 15,
+    "TECH_RESEARCH_4": 14,
+    "POINTS_3": 4,
+    "POINTS_2": 4, 
     "ENERGY_CORE": 4,
-    "POINTS_1": 5,
-    "ALIEN_ARTIFACT": 3,
-    "TECH_RESEARCH_2": 10,
-    "TECH_RESEARCH_3": 9,
-    "TECH_RESEARCH_4": 8
+    "POINTS_1": 4,
+    "ALIEN_ARTIFACT": 4
 }
 
 number_of_objectives_reached_before_we_target_point = 1
@@ -91,7 +95,11 @@ class Game:
         return False
 
     def should_colonize_planet(self, planet, station):
-        return self.is_planet_not_already_lost(planet) and self.can_use_station_techs_on_planet(planet, station)
+        colonize = self.is_planet_not_already_lost(planet) and self.can_use_station_techs_on_planet(planet, station)
+        if colonize and feature_only_2_remaining:
+            if len(self.planets == 2) and (planet.my_contribution + planet.opp_contribution) == 0:
+                colonize = False
+        return colonize
 
     def get_best_planet(self, station):
         return self.get_first_valid_planet(station)
@@ -174,10 +182,6 @@ class Game:
     def get_action(self):
         # main actions: COLONIZE | RESUPPLY
         # bonus actions: ENERGY_CORE | ALIEN_ARTIFACT | TECH_RESEARCH | NEW_TECH
-
-        # alien_artifact_command_line = self.get_alien_artifact_command_line()
-        # if alien_artifact_command_line is not None:
-        #     return alien_artifact_command_line
 
         bonus_command_line = self.get_bonus_command_line(self.get_objectives_reached())
         if bonus_command_line is not None:
@@ -263,7 +267,7 @@ class Combo:
             if (self.planet.tasks[i] > self.station.tech[i]):
                 can_finish = False
         if can_finish and self.planet.opp_contribution == 0:
-            self.finish_it = 1
+            self.finish_it = 16
 
 
 game = Game()
