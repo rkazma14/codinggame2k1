@@ -254,6 +254,8 @@ class Combo:
         self.planet_bonus_score = self.planet.bonus_score(objectives_reached)
         self.finish_it = 0
         self.set_finish_it()
+        self.weighted_score = 0
+        self.set_weighted_score()
 
     def set_score(self):
         self.score = 0
@@ -268,6 +270,12 @@ class Combo:
                 can_finish = False
         if can_finish and self.planet.opp_contribution == 0:
             self.finish_it = 16
+            
+    def set_weighted_score(self):
+        score = 0
+        for attribute, weight in weights:
+            score += self.__getattribute__(attribute) * weight
+        self.weighted_score = score
 
 
 game = Game()
