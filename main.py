@@ -43,6 +43,9 @@ class Game:
         self.current_station_index = -1
         self.my_stations.sort(key=attrgetter('objective_score'), reverse=True)
 
+    def tech_first(self, objectives_reached):
+        return (objectives_reached < number_of_objectives_reached_before_we_target_point)
+
     def get_objectives_reached(self):
         count = 0
         for station in self.my_stations:
@@ -106,18 +109,17 @@ class Game:
             return 'ENERGY_CORE'
         return None
 
-    def get_tech_research_command_line(self, tech_level):
+    def get_tech_research_command_line(self, bonus, tech_level):
         station_id = None
         station, tech_id = self.get_best_station_from_tech(tech_level)
         if station is None or tech_id is None:
-            station_id = random.randint(0,3)
-            station = self.my_stations[station_id]
-            tech_id = random.randint(0,3)
+            tech_level = 1
+            station, tech_id = self.get_best_station_from_tech(tech_level)
         if (station.tech[tech_id] > 0):
             if (station.tech[tech_id] + 1 == tech_level):
                 return "TECH_RESEARCH {0} {1}".format(station.id, tech_id)
         else:
-            return "NEW_TECH {0} {1} {2}{3}".format(station.id, tech_id, 'TECH_RESEARCH_', tech_level)
+            return "NEW_TECH {0} {1} {2}".format(station.id, tech_id, bonus)
         return None
 
     def get_alien_artifact_command_line(self):
@@ -131,22 +133,33 @@ class Game:
 
     def get_best_bonus(self):
         for bonus in self.my_bonuses:
-            if bonus not in ["POINTS_1", "POINTS_2", "POINTS_3", "ALIEN_ARTIFACT", "ENERGY_CORE"]:
+            if bonus not in ["POINTS_1", "POINTS_2", "POINTS_3", "ENERGY_CORE"]:
                 return bonus
         return None
 
-    def get_bonus_command_line(self):
-        bonus = self.get_best_bonus()
-        if bonus == "TECH_RESEARCH_2":
-            return self.get_tech_research_command_line(2)
-        elif bonus == "TECH_RESEARCH_3":
-            return self.get_tech_research_command_line(3)
-        elif bonus == "TECH_RESEARCH_4":
-            return self.get_tech_research_command_line(4)
+    def get_bonus_command_line(self, objectives_reached):
+        if (self.tech_first(objectives_reached) and len(self.my_bonuses) > 0):
+            # If TECH bonus: apply based on objective to TECH_RESEARCH
+            # If not TECH bonus: apply based on objective to NEW_TECH
+            bonus = self.my_bonuses[0]
+            if "TECH_RESEARCH" in bonus:
+                self.get_tech_research_command_line(bonus, bonus[-1])
+            else:
+                self.get_tech_research_command_line(bonus, 1)
+        else:
+            bonus = self.get_best_bonus()
+            if bonus == "TECH_RESEARCH_2":
+                return self.get_tech_research_command_line(bonus, 2)
+            elif bonus == "TECH_RESEARCH_3":
+                return self.get_tech_research_command_line(bonus, 3)
+            elif bonus == "TECH_RESEARCH_4":
+                return self.get_tech_research_command_line(bonus, 4)
+            elif bonus == "ALIEN_ARTIFACT":
+                return self.get_tech_research_command_line(bonus, 1)
         return None
 
     def get_best_preferred_bonus(self, planet, objectives_reached):
-        if (objectives_reached >= number_of_objectives_reached_before_we_target_point):
+        if (not self.tech_first(objectives_reached)):
             if bonus_ranking_by_points[planet.bonuses[0]] > bonus_ranking_by_points[planet.bonuses[1]]:
                 return 0
             else:
@@ -166,7 +179,7 @@ class Game:
         # if alien_artifact_command_line is not None:
         #     return alien_artifact_command_line
 
-        bonus_command_line = self.get_bonus_command_line()
+        bonus_command_line = self.get_bonus_command_line(self.get_objectives_reached())
         if bonus_command_line is not None:
             return bonus_command_line
         else:
@@ -215,7 +228,7 @@ class Planet:
         return self.tasks[0] + self.tasks[1] + self.tasks[2] + self.tasks[3]
 
     def bonus_score(self, objectives_reached):
-        if (objectives_reached >= number_of_objectives_reached_before_we_target_point):
+        if (not self.tech_first(objectives_reached)):
             if bonus_ranking_by_points[self.bonuses[0]] > bonus_ranking_by_points[self.bonuses[1]]:
                 return bonus_ranking_by_points[self.bonuses[0]]
             else:
